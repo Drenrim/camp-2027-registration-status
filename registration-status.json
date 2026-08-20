@@ -1,0 +1,24 @@
+{
+  "program": "summer-acting-camp-2027",
+  "threshold": 10,
+  "claimedCount": 0,
+  "remainingPromoClaims": 10,
+  "exhausted": false,
+  "configurationVerified": true,
+  "mode": "promo",
+  "cta": {
+    "url": "https://app.jackrabbitclass.com/regv2.asp?id=546074&preLoadClassID=22262489",
+    "label": "Claim the $1,000 first-10 offer"
+  },
+  "offer": {
+    "state": "available",
+    "label": "Limited first-10 offer"
+  },
+  "monitor": {
+    "source": "jackrabbit-public-openings",
+    "promoClassId": "22262489",
+    "latestObservedOpenings": 10,
+    "lastObservedChangeAt": "2026-08-20T13:18:33.107Z",
+    "monotonic": true
+  }
+}
