@@ -4,9 +4,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const CLASS_ID = '22262489';
+const EARLY_BIRD_CLASS_ID = '22204178';
+const ORGANIZATION_ID = '546074';
+const ALLOWED_HOST = 'app.jackrabbitclass.com';
 const THRESHOLD = 10;
-const PROMO_URL = 'https://app.jackrabbitclass.com/regv2.asp?id=546074&preLoadClassID=22262489';
-const REGULAR_URL = 'https://app.jackrabbitclass.com/regv2.asp?id=546074&preLoadClassID=22204178';
+const PROMO_URL = `https://${ALLOWED_HOST}/regv2.asp?id=${ORGANIZATION_ID}&preLoadClassID=${CLASS_ID}`;
+const EARLY_BIRD_URL = `https://${ALLOWED_HOST}/regv2.asp?id=${ORGANIZATION_ID}&preLoadClassID=${EARLY_BIRD_CLASS_ID}`;
 const STATUS_PATH = path.join(__dirname, 'registration-status.json');
 
 function extractOpenings(html) {
@@ -35,6 +38,7 @@ function buildStatus(previous, openings, changedAt = new Date().toISOString()) {
 
   return {
     program: 'summer-acting-camp-2027',
+    checkedAt: changedAt,
     threshold: THRESHOLD,
     claimedCount,
     remainingPromoClaims: Math.max(0, THRESHOLD - claimedCount),
@@ -42,7 +46,7 @@ function buildStatus(previous, openings, changedAt = new Date().toISOString()) {
     configurationVerified: true,
     mode: exhausted ? 'regular' : 'promo',
     cta: {
-      url: exhausted ? REGULAR_URL : PROMO_URL,
+      url: exhausted ? EARLY_BIRD_URL : PROMO_URL,
       label: exhausted
         ? 'Register at the $1,500 Super Early Bird rate'
         : 'Claim the $1,000 first-10 offer',
@@ -51,10 +55,19 @@ function buildStatus(previous, openings, changedAt = new Date().toISOString()) {
       state: exhausted ? 'claimed' : 'available',
       label: exhausted ? 'First 10 spots claimed' : 'Limited first-10 offer',
     },
+    registration: {
+      allowedHost: ALLOWED_HOST,
+      organizationId: ORGANIZATION_ID,
+      promoClassId: CLASS_ID,
+      earlyBirdClassId: EARLY_BIRD_CLASS_ID,
+      promoUrl: PROMO_URL,
+      earlyBirdUrl: EARLY_BIRD_URL,
+    },
     monitor: {
       source: 'jackrabbit-public-openings',
       promoClassId: CLASS_ID,
       latestObservedOpenings: openings,
+      lastCheckedAt: changedAt,
       lastObservedChangeAt: observationChanged
         ? changedAt
         : previous?.monitor?.lastObservedChangeAt || changedAt,

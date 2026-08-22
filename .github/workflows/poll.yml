@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: camp-2027-registration-monitor
@@ -24,6 +25,7 @@ jobs:
       - name: Test monotonic cutoff logic
         run: node --test poll.test.js
       - name: Read current Jackrabbit openings
+        id: poll
         run: node poll.js
       - name: Publish changed status
         run: |
@@ -36,3 +38,84 @@ jobs:
           git add registration-status.json
           git commit -m "Update Camp 2027 registration status"
           git push
+      - name: Close a recovered monitor alert
+        if: success()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const title = '[Monitor Alert] Camp 2027 registration status is stale';
+            const { data: issues } = await github.rest.issues.listForRepo({
+              ...context.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = issues.find(issue => !issue.pull_request && issue.title === title);
+            if (existing) {
+              const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: existing.number,
+                body: `A fresh successful observation was published. Recovery run: ${runUrl}`,
+              });
+              await github.rest.issues.update({
+                ...context.repo,
+                issue_number: existing.number,
+                state: 'closed',
+              });
+            }
+      - name: Write failure report
+        if: failure()
+        run: |
+          printf '%s\n' \
+            '# Camp 2027 registration monitor failure' \
+            '' \
+            "- Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            "- Attempt: $GITHUB_RUN_ATTEMPT" \
+            "- Ref: $GITHUB_REF" \
+            "- Commit: $GITHUB_SHA" \
+            "- Recorded: $(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            '' \
+            'The monitor did not publish a fresh successful observation. Treat the public registration state as stale until a later run succeeds.' \
+            > camp-2027-monitor-failure.md
+          cat camp-2027-monitor-failure.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve failure report
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: camp-2027-monitor-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: camp-2027-monitor-failure.md
+          retention-days: 30
+      - name: Open or update monitor failure issue
+        if: failure()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const title = '[Monitor Alert] Camp 2027 registration status is stale';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `The Camp 2027 registration monitor failed on ${new Date().toISOString()}.`,
+              '',
+              `Run: ${runUrl}`,
+              `Commit: ${context.sha}`,
+              '',
+              'Until a later run succeeds, treat the public registration status as stale and do not rely on the promotional CTA.',
+            ].join('\n');
+            const { data: issues } = await github.rest.issues.listForRepo({
+              ...context.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = issues.find(issue => !issue.pull_request && issue.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: existing.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                ...context.repo,
+                title,
+                body,
+              });
+            }
