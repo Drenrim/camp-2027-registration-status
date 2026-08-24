@@ -1,6 +1,6 @@
 {
   "program": "summer-acting-camp-2027",
-  "checkedAt": "2026-08-24T20:02:47.709Z",
+  "checkedAt": "2026-08-24T20:42:10.147Z",
   "threshold": 10,
   "claimedCount": 0,
   "remainingPromoClaims": 10,
@@ -27,7 +27,7 @@
     "source": "jackrabbit-public-openings",
     "promoClassId": "22262489",
     "latestObservedOpenings": 10,
-    "lastCheckedAt": "2026-08-24T20:02:47.709Z",
+    "lastCheckedAt": "2026-08-24T20:42:10.147Z",
     "lastObservedChangeAt": "2026-08-20T13:18:33.107Z",
     "monotonic": true
   }
